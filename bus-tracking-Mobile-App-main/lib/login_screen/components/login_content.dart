@@ -292,7 +292,6 @@ class AuthService {
                   prenom: data['prenom'],
                   id: data['id'],
                   id_b: data['id_b'],
-                  password: data['password'],
                 ),
               ),
             );

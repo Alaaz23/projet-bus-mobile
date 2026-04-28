@@ -9,14 +9,12 @@ import 'package:quickalert/quickalert.dart';
 class ModifyScreen extends StatefulWidget {
   final String nom;
   final String prenom;
-  final String password;
   final String matricule;
 
   const ModifyScreen({
     Key? key,
     required this.nom,
     required this.prenom,
-    required this.password,
     required this.matricule,
   }) : super(key: key);
 

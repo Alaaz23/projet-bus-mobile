@@ -18,7 +18,6 @@ class HomePage extends StatefulWidget {
   final int id;
   final int id_st;
   final int id_b;
-  final String password;
 
   const HomePage({
     Key? key,
@@ -28,7 +27,6 @@ class HomePage extends StatefulWidget {
     required this.id,
     required this.id_st,
     required this.id_b,
-    required this.password,
   }) : super(key: key);
 
   @override
@@ -268,7 +266,6 @@ class _HomePageState extends State<HomePage> {
           nom: widget.nom,
           prenom: widget.prenom,
           id: widget.id,
-          password: widget.password,
           matricule: widget.matricule),
       body: _isLoading
           ? Center(

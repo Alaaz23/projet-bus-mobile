@@ -7,14 +7,14 @@ class MyDrawer extends StatelessWidget {
   final String nom;
   final String prenom;
   final int id;
-  final String password;
-  final String matricule; // Add the ID parameter
+  final String matricule;
 
   const MyDrawer({
     Key? key,
     required this.nom,
     required this.prenom,
-    required this.id, required this.password, required this.matricule, // Add the ID parameter
+    required this.id,
+    required this.matricule,
   }) : super(key: key);
 
   @override
@@ -69,7 +69,7 @@ class MyDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (context) =>
-                        ModifyScreen(nom: nom, prenom: prenom,password: password,matricule: matricule)),
+                        ModifyScreen(nom: nom, prenom: prenom, matricule: matricule)),
               );
             },
           ),
