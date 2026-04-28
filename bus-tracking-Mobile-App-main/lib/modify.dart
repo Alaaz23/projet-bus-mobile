@@ -133,57 +133,70 @@ class _ModifyScreenState extends State<ModifyScreen> {
     String previousPassword = previousPasswordController.text;
     String newPassword = newPasswordController.text;
 
-    // Check if the previous password matches the stored password
-    if (previousPassword != widget.password) {
-      // If previous password doesn't match, show error message
+    if (previousPassword.isEmpty || newPassword.isEmpty) {
       QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
-        text: 'Previous password does not match.',
+        text: 'Veuillez remplir tous les champs.',
       );
-      return; // Exit the function
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+      );
+      return;
     }
 
     try {
-      var response = await http.post(
+      // Étape 1 : Vérifier l'ancien mot de passe via le backend (login)
+      final verifyResponse = await http.post(
+        Uri.parse('$kBackendBaseUrl/salaries/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'matricule': widget.matricule,
+          'password': previousPassword,
+        }),
+      );
+
+      if (verifyResponse.statusCode != 200) {
+        QuickAlert.show(context: context, type: QuickAlertType.error, text: 'Erreur réseau.');
+        return;
+      }
+
+      final verifyData = jsonDecode(verifyResponse.body);
+      if (verifyData['success'] != true) {
+        QuickAlert.show(context: context, type: QuickAlertType.error, text: 'Mot de passe actuel incorrect.');
+        return;
+      }
+
+      // Étape 2 : Changer le mot de passe
+      final response = await http.post(
         Uri.parse('$kBackendBaseUrl/salaries/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'matricule': widget.matricule,
           'password': newPassword,
-          // Add any other parameters required by your backend service
         }),
       );
 
       if (response.statusCode == 200) {
-        // Password reset successfully
-        QuickAlert.show(
+        await QuickAlert.show(
           context: context,
           type: QuickAlertType.success,
-          text: 'Password reset successfully',
+          text: 'Mot de passe modifié avec succès.',
         );
+        if (mounted) Navigator.of(context).pop();
       } else if (response.statusCode == 404) {
-        // User not found
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          text: 'User not found',
-        );
+        QuickAlert.show(context: context, type: QuickAlertType.error, text: 'Utilisateur introuvable.');
       } else {
-        // Other errors
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          text: 'Error: ${response.statusCode}',
-        );
+        QuickAlert.show(context: context, type: QuickAlertType.error, text: 'Erreur: ${response.statusCode}');
       }
     } catch (e) {
-      // Handle network errors
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        text: 'An error occurred: $e',
-      );
+      QuickAlert.show(context: context, type: QuickAlertType.error, text: 'Erreur réseau. Vérifiez votre connexion.');
     }
   }
 }

@@ -40,8 +40,10 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   List listOfPoints = [];
   List<Marker> mapMarkers = [];
-  LatLng? busPosition; // Variable to store bus position
-  bool _busPositionUnavailable = false; // true si le bus n'a pas de GPS
+  LatLng? busPosition;
+  bool _busPositionUnavailable = false;
+  int? _etaMinutes;
+  double? _distanceKm;
 
   List<LatLng> points = [];
   LatLng? salarieStation;
@@ -179,6 +181,7 @@ class _HomePageState extends State<HomePage> {
           busPosition = LatLng(latitude, longitude);
           _busPositionUnavailable = false;
           getDistance(busPosition, salarieStation);
+          _fetchEta(latitude, longitude); // ← ETA automatique
         });
       } else if (response.statusCode == 404) {
         // Le bus n'a pas de point GPS assigné — on arrête le timer pour éviter le spam
@@ -195,8 +198,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> fetchStations() async {
+  Future<void> _fetchEta(double busLat, double busLon) async {
+    if (salarieStation == null) return;
     try {
+      final uri = Uri.parse(
+        '$kBackendBaseUrl/buses/${widget.id_b}/eta'
+        '?stationLat=${salarieStation!.latitude}&stationLon=${salarieStation!.longitude}',
+      );
+      final response = await http.get(uri, headers: {'Content-Type': 'application/json'});
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _etaMinutes = data['etaMinutes'] as int?;
+          _distanceKm = (data['distanceKm'] as num?)?.toDouble();
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> fetchStations() async {    try {
       final response = await http.get(
         Uri.parse(
             '$kBackendBaseUrl/tragets/stations/${widget.id_st}'),
@@ -268,6 +288,23 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           'Position du bus non disponible (GPS non configuré)',
                           style: TextStyle(color: Colors.orange, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_etaMinutes != null)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.green.shade50,
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.schedule, color: Colors.green, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Arrivée estimée dans ~$_etaMinutes min'
+                          '${_distanceKm != null ? ' · ${_distanceKm!.toStringAsFixed(1)} km' : ''}',
+                          style: const TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
