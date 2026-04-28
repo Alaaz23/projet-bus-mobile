@@ -33,7 +33,7 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    // The value below is injected by flutter build, do not touch.
+    // Flutter initialization
     const serviceWorkerVersion = null;
   </script>
   <!-- This script adds the flutter initialization JS code -->
@@ -41,19 +41,16 @@
 </head>
 <body>
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
-        }
-      });
+  window.addEventListener('load', function(ev) {
+    _flutter.loader.loadEntrypoint({
+      onEntrypointLoaded: async function(engineInitializer) {
+        const appRunner = await engineInitializer.initializeEngine({
+          renderer: 'html',
+        });
+        await appRunner.runApp();
+      }
     });
-  </script>
+  });
+</script>
 </body>
 </html>

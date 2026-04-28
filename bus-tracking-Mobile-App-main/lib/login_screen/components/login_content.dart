@@ -4,6 +4,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bus_tracking/home_page.dart';
+import 'package:bus_tracking/admin_home_page.dart';
 
 class LoginContent extends StatefulWidget {
   const LoginContent({Key? key}) : super(key: key);
@@ -25,9 +26,7 @@ class _LoginContentState extends State<LoginContent> {
     if (formSubmitted) {
       if (hint == 'Matricule') {
         if (matriculeController.text.isEmpty) {
-          errorMsg = 'Matricule is required';
-        } else if (matriculeController.text.length != 6) {
-          errorMsg = 'Matricule must be 6 characters long';
+          errorMsg = 'Matricule est requis';
         }
       } else if (hint == 'Mot De Passe') {
         if (passwordController.text.isEmpty) {
@@ -156,8 +155,7 @@ class _LoginContentState extends State<LoginContent> {
         onPressed: () async {
           setState(() {
             formSubmitted = true;
-            matriculeError = matriculeController.text.isEmpty ||
-                matriculeController.text.length != 6;
+            matriculeError = matriculeController.text.isEmpty;
             passwordError = passwordController.text.isEmpty;
           });
 
@@ -204,83 +202,117 @@ class _LoginContentState extends State<LoginContent> {
 }
 
 class AuthService {
-  static const String baseUrl = 'http://10.0.2.2:8081/Bus-tracking/salaries';
-  static const String loginUrl = '$baseUrl/login';
-  static const String resetPasswordUrl = '$baseUrl/reset-password';
+  // Endpoint unifié : vérifie admin ET salarié (correspond au AuthController côté backend)
+  static String get authLoginUrl => '$kBackendBaseUrl/auth/login';
+
+  // Endpoint salarié : récupère les données complètes (id_st, id_b, etc.)
+  static String get salarieLoginUrl => '$kBackendBaseUrl/salaries/login';
+  static String get resetPasswordUrl => '$kBackendBaseUrl/salaries/reset-password';
 
   get data => null;
 
   Future<bool> login(BuildContext context, String matricule, String mdp) async {
     try {
-      final response = await http.post(
-        Uri.parse(loginUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'matricule': matricule,
-          'password': mdp,
-        }),
+      // ── Étape 1 : Appel à /auth/login (vérifie admin ET salarié) ──────────
+      final authResponse = await http.post(
+        Uri.parse(authLoginUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'matricule': matricule, 'password': mdp}),
       );
 
-      // Print response status code for debugging
-      print('Response status code: ${response.statusCode}');
+      print('[AUTH] Status: ${authResponse.statusCode}');
+      print('[AUTH] Body: ${authResponse.body}');
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        // Print response data for debugging
-        print('Response data: $data');
+      if (authResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Erreur serveur. Veuillez réessayer plus tard.'),
+          backgroundColor: Colors.red,
+        ));
+        return false;
+      }
+
+      final authData = json.decode(authResponse.body);
+      final bool success = authData['success'] ?? false;
+
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Matricule ou mot de passe incorrect.'),
+          backgroundColor: Colors.red,
+        ));
+        return false;
+      }
+
+      final String role = authData['role'] ?? 'USER';
+      final String token = authData['token'] ?? '';
+      final String displayName = authData['displayName'] ?? '';
+
+      // ── Étape 2 : Routage selon le rôle ───────────────────────────────────
+      if (role == 'ADMIN') {
+        // Connexion admin : naviguer vers la page admin
+        print('[AUTH] Rôle ADMIN détecté → AdminHomePage');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => AdminHomePage(
+              matricule: matricule,
+              displayName: displayName,
+              token: token,
+            ),
+          ),
+        );
+        return true;
+      }
+
+      // ── Étape 3 : Pour USER, récupérer les données complètes du salarié ──
+      print('[AUTH] Rôle USER détecté → récupération données salarié');
+      final salarieResponse = await http.post(
+        Uri.parse(salarieLoginUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'matricule': matricule, 'password': mdp}),
+      );
+
+      print('[SALARIE] Status: ${salarieResponse.statusCode}');
+      print('[SALARIE] Body: ${salarieResponse.body}');
+
+      if (salarieResponse.statusCode == 200) {
+        final data = json.decode(salarieResponse.body);
         bool loginSuccess = data['success'] ?? false;
+
         if (loginSuccess) {
-          // Check if the password is the default one
+          // Vérification mot de passe par défaut
           bool isDefaultPassword = mdp == 'Sofrecom123#';
           if (isDefaultPassword) {
-            // Prompt user to reset password
             _showPasswordResetDialog(context, matricule, data);
           } else {
-            // Authentication succeeded
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => HomePage(
                   matricule: matricule,
-                  id_st: data['id_st'], // Pass tragetId here
-                  nom: data['nom'], // Pass nom here
+                  id_st: data['id_st'],
+                  nom: data['nom'],
                   prenom: data['prenom'],
                   id: data['id'],
                   id_b: data['id_b'],
-                  password: data['password'], // Pass prenom here
-                ), // Replace HomePage() with your home page widget
+                  password: data['password'],
+                ),
               ),
             );
           }
-        } else {
-          // Authentication failed
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login failed. Please check your credentials.'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          return true;
         }
-        return loginSuccess;
-      } else {
-        // Server returned an error response
-        print('Server error: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Server error. Please try again later.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return false;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Impossible de récupérer les données du salarié.'),
+        backgroundColor: Colors.red,
+      ));
+      return false;
     } catch (e) {
-      // An error occurred
-      print('An error occurred: $e');
+      print('[AUTH] Erreur: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('An error occurred. Please try again later.'),
+        SnackBar(
+          content: Text('Connexion impossible au serveur.\nVérifiez que le backend est démarré.\n($e)'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
       return false;

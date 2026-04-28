@@ -1,4 +1,5 @@
 import 'package:bus_tracking/my_app_bar.dart';
+import 'package:bus_tracking/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -82,7 +83,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     };
 
                     final url = Uri.parse(
-                        'http://10.0.2.2:8081/Bus-tracking/feedbacks/add');
+                        '$kBackendBaseUrl/feedbacks/add');
                     final response = await http.post(
                       url,
                       headers: <String, String>{
@@ -92,11 +93,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     );
 
                     if (response.statusCode == 201) {
-                      QuickAlert.show(
+                      _descriptionController.clear();
+                      await QuickAlert.show(
                         context: context,
                         type: QuickAlertType.success,
                         text: 'Feedback submitted successfully!',
                       );
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
                     } else {
                       QuickAlert.show(
                         context: context,

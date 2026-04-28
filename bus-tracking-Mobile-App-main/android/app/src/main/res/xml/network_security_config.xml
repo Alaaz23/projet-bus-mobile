@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Autorise le trafic HTTP (non-HTTPS) vers le backend Spring Boot local.
+    10.0.2.2 = localhost de la machine hôte depuis l'émulateur Android.
+    Pour un appareil physique, utilisez l'IP locale de votre PC (ex: 192.168.x.x).
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Émulateur Android : 10.0.2.2 correspond à localhost de la machine hôte -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <!-- Appareil physique : remplacez par votre IP locale si nécessaire -->
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>
+

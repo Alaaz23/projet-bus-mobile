@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bus_tracking/api.dart';
 import 'package:bus_tracking/my_app_bar.dart';
 import 'package:bus_tracking/my_drawer.dart';
+import 'package:bus_tracking/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -40,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   List listOfPoints = [];
   List<Marker> mapMarkers = [];
   LatLng? busPosition; // Variable to store bus position
+  bool _busPositionUnavailable = false; // true si le bus n'a pas de GPS
 
   List<LatLng> points = [];
   LatLng? salarieStation;
@@ -143,7 +145,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchStationSalarie() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/Bus-tracking/stations/${widget.id_st}'),
+        Uri.parse('$kBackendBaseUrl/stations/${widget.id_st}'),
         headers: {'Content-Type': 'application/json'},
       );
       if (response.statusCode == 200) {
@@ -165,7 +167,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchBusPosition() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/Bus-tracking/buses/${widget.id_b}'),
+        Uri.parse('$kBackendBaseUrl/buses/${widget.id_b}'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -175,8 +177,16 @@ class _HomePageState extends State<HomePage> {
         double longitude = data['longitude'];
         setState(() {
           busPosition = LatLng(latitude, longitude);
+          _busPositionUnavailable = false;
           getDistance(busPosition, salarieStation);
         });
+      } else if (response.statusCode == 404) {
+        // Le bus n'a pas de point GPS assigné — on arrête le timer pour éviter le spam
+        setState(() {
+          _busPositionUnavailable = true;
+        });
+        _timer?.cancel();
+        print('Bus position unavailable (no GPS assigned to bus ${widget.id_b})');
       } else {
         print('Failed to fetch bus position: ${response.statusCode}');
       }
@@ -189,7 +199,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://10.0.2.2:8081/Bus-tracking/tragets/stations/${widget.id_st}'),
+            '$kBackendBaseUrl/tragets/stations/${widget.id_st}'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -246,6 +256,22 @@ class _HomePageState extends State<HomePage> {
             )
           : Column(
               children: [
+                if (_busPositionUnavailable)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.orange.shade100,
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.warning_amber, color: Colors.orange, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Position du bus non disponible (GPS non configuré)',
+                          style: TextStyle(color: Colors.orange, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: stations.isNotEmpty
                       ? FlutterMap(

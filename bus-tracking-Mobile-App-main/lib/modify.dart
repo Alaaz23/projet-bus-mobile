@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bus_tracking/my_app_bar.dart';
+import 'package:bus_tracking/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quickalert/quickalert.dart';
@@ -145,7 +146,7 @@ class _ModifyScreenState extends State<ModifyScreen> {
 
     try {
       var response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/Bus-tracking/salaries/reset-password'),
+        Uri.parse('$kBackendBaseUrl/salaries/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'matricule': widget.matricule,
