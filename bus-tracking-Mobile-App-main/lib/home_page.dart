@@ -154,13 +154,12 @@ class _HomePageState extends State<HomePage> {
         double longitude = data['longitude'];
         setState(() {
           salarieStation = LatLng(latitude, longitude);
-          print(salarieStation);
         });
       } else {
-        print('Failed to fetch salarie`s station: ${response.statusCode}');
+        debugPrint('Failed to fetch salarie`s station: \${response.statusCode}');
       }
     } catch (e) {
-      print('An error occurred while fetching salarie`s station: $e');
+      debugPrint('An error occurred while fetching salarie`s station: $e');
     }
   }
 
@@ -178,21 +177,18 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           busPosition = LatLng(latitude, longitude);
           _busPositionUnavailable = false;
-          getDistance(busPosition, salarieStation);
-          _fetchEta(latitude, longitude); // ← ETA automatique
+          _fetchEta(latitude, longitude);
         });
       } else if (response.statusCode == 404) {
-        // Le bus n'a pas de point GPS assigné — on arrête le timer pour éviter le spam
         setState(() {
           _busPositionUnavailable = true;
         });
-        _timer?.cancel();
-        print('Bus position unavailable (no GPS assigned to bus ${widget.id_b})');
+        // Ne pas annuler le timer : la position peut redevenir disponible
       } else {
-        print('Failed to fetch bus position: ${response.statusCode}');
+        debugPrint('Failed to fetch bus position: \${response.statusCode}');
       }
     } catch (e) {
-      print('An error occurred while fetching bus position: $e');
+      debugPrint('An error occurred while fetching bus position: $e');
     }
   }
 
