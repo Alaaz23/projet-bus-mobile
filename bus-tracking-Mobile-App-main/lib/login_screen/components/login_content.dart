@@ -385,12 +385,11 @@ class AuthService {
                     MaterialPageRoute(
                       builder: (_) => HomePage(
                         matricule: matricule,
-                        id_st: data['id_st'], // Pass tragetId here
-                        nom: data['nom'], // Pass nom here
+                        id_st: data['id_st'],
+                        nom: data['nom'],
                         prenom: data['prenom'],
                         id: data['id'],
                         id_b: data['id_b'],
-                        password: data['password'], // Pass prenom here
                       ),
                     ),
                   );
