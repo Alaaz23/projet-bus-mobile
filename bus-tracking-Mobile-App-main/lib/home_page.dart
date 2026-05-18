@@ -260,8 +260,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   double  _bearing = 0.0;
   bool    _busPositionUnavailable = false;
 
-  int?    _etaMinutes;
-  double? _distanceKm;
+  int?      _etaMinutes;
+  double?   _distanceKm;
+  DateTime? _lastEtaCalc;
 
   GpsWebSocketService? _gpsWs;
   bool _realGpsActive = false;
@@ -409,7 +410,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     }
     _centerIfNeeded(snapped);
-    _fetchEta(snapped.latitude, snapped.longitude);
+    _calcLocalEta();
   }
 
   Future<void> _fetchLatestPosition() async {
@@ -469,7 +470,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           });
           debugPrint('[fetchLatestPosition] ✅ Position bus: lat=$lat, lng=$lng (il y a ${age ~/ 1000}s)');
         }
-        _fetchEta(lat, lng);
+        _calcLocalEta();
         return;
       }
 
@@ -823,6 +824,57 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } catch (_) {}
   }
 
+  /// Calcule l'ETA localement depuis la position courante sur la route.
+  /// Utilise _simSegIdx/_simSegT en simulation, ou le point le plus proche en mode GPS réel.
+  void _calcLocalEta() {
+    final pts = _routePoints;
+    if (pts.length < 2) return;
+
+    double remainingM = 0.0;
+    int startIdx;
+
+    if (_simTimer != null && !_realGpsActive) {
+      // Mode simulation : utiliser l'index de segment courant
+      final idx = _simSegIdx.clamp(0, pts.length - 2);
+      final segLen = _distanceBetween(pts[idx], pts[idx + 1]);
+      remainingM += segLen * (1.0 - _simSegT);
+      startIdx = idx + 1;
+    } else {
+      // Mode GPS réel : trouver le segment le plus proche
+      if (_busPosition == null) return;
+      startIdx = _findNearestSegment(_busPosition!);
+    }
+
+    for (int i = startIdx; i < pts.length - 1; i++) {
+      remainingM += _distanceBetween(pts[i], pts[i + 1]);
+    }
+
+    if (remainingM <= 0) {
+      if (mounted) setState(() { _etaMinutes = null; _distanceKm = null; _etaArrivalTime = null; });
+      return;
+    }
+
+    // Vitesse : GPS si disponible, sinon constante simulation (12 m/s = 43.2 km/h)
+    final speedMs = (_busSpeed != null && _busSpeed! > 2.0)
+        ? _busSpeed! / 3.6
+        : _kSpeedMps;
+
+    final durationSec = remainingM / speedMs;
+    final mins = (durationSec / 60).ceil();
+    final distKm = (remainingM / 100).roundToDouble() / 10.0;
+    final arrival = DateTime.now().add(Duration(seconds: durationSec.round()));
+    final arrivalStr = '${arrival.hour.toString().padLeft(2, '0')}'
+        ':${arrival.minute.toString().padLeft(2, '0')}';
+
+    if (mounted) {
+      setState(() {
+        _etaMinutes    = mins;
+        _distanceKm    = distKm;
+        _etaArrivalTime = arrivalStr;
+      });
+    }
+  }
+
   Future<void> _loadRoute(List<LatLng> waypoints) async {
     if (mounted) setState(() => _routeLoading = true);
     final pts = await _fetchRoute(waypoints);
@@ -1077,6 +1129,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     }
     _centerIfNeeded(pos);
+    // ETA (throttle : max 1 fois toutes les 5 secondes)
+    final nowEta = DateTime.now();
+    if (_lastEtaCalc == null || nowEta.difference(_lastEtaCalc!).inSeconds >= 5) {
+      _lastEtaCalc = nowEta;
+      _calcLocalEta();
+    }
   }
 
   bool _advanceSegments(double dtMs) {
