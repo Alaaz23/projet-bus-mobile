@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:bus_tracking/utils/constants.dart';
+import 'package:bus_tracking/pages/salaries_page.dart';
+import 'package:bus_tracking/pages/buses_page.dart';
+import 'package:bus_tracking/pages/trajets_page.dart';
+import 'package:bus_tracking/pages/feedbacks_page.dart';
 
 /// Page d'accueil pour les administrateurs
 /// Accessible après connexion avec un compte admin (matricule: admin, mot de passe: admin123)
@@ -66,9 +70,9 @@ class AdminHomePage extends StatelessWidget {
                             style: TextStyle(
                                 color: Colors.white70, fontSize: 14),
                           ),
-                          Text(
-                            displayName,
-                            style: const TextStyle(
+                          const Text(
+                            'Administrateur',
+                            style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold),
@@ -111,8 +115,11 @@ class AdminHomePage extends StatelessWidget {
                   label: 'Salariés',
                   subtitle: 'Gérer les employés',
                   color: kSecondaryColor,
-                  onTap: () => _showInfo(context,
-                      'Gestion des salariés disponible via le portail web'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const SalariesPage()),
+                  ),
                 ),
                 _adminCard(
                   context,
@@ -120,8 +127,11 @@ class AdminHomePage extends StatelessWidget {
                   label: 'Bus',
                   subtitle: 'Gérer les bus',
                   color: kPrimaryColor,
-                  onTap: () => _showInfo(context,
-                      'Gestion des bus disponible via le portail web'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const BusesPage()),
+                  ),
                 ),
                 _adminCard(
                   context,
@@ -129,8 +139,11 @@ class AdminHomePage extends StatelessWidget {
                   label: 'Trajets',
                   subtitle: 'Voir les trajets',
                   color: Colors.teal,
-                  onTap: () => _showInfo(context,
-                      'Gestion des trajets disponible via le portail web'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const TrajetsPage()),
+                  ),
                 ),
                 _adminCard(
                   context,
@@ -138,8 +151,11 @@ class AdminHomePage extends StatelessWidget {
                   label: 'Feedbacks',
                   subtitle: 'Voir les retours',
                   color: Colors.orange,
-                  onTap: () => _showInfo(context,
-                      'Gestion des feedbacks disponible via le portail web'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const FeedbacksPage()),
+                  ),
                 ),
               ],
             ),
@@ -166,7 +182,7 @@ class AdminHomePage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   color: kPrimaryColor)),
                           Text(
-                            'Utilisez le portail web pour la gestion complète',
+                            'Matricule : $matricule',
                             style: TextStyle(
                                 color: Colors.grey[600], fontSize: 12),
                           ),
@@ -221,12 +237,5 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
-  void _showInfo(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: kPrimaryColor,
-      duration: const Duration(seconds: 3),
-    ));
-  }
 }
 

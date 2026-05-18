@@ -136,6 +136,48 @@ class ApiService {
     throw ApiException('Trajet introuvable', response.statusCode);
   }
 
+  // ─── ADMIN : LISTES ───────────────────────────────────────────────────────
+
+  /// Récupère tous les salariés
+  static Future<List<dynamic>> getSalaries() async {
+    final url = Uri.parse('$kBackendBaseUrl/salaries/all');
+    final response = await http
+        .get(url, headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw ApiException('Impossible de charger les salariés', response.statusCode);
+  }
+
+  /// Récupère tous les bus
+  static Future<List<dynamic>> getBuses() async {
+    final url = Uri.parse('$kBackendBaseUrl/buses/getAll');
+    final response = await http
+        .get(url, headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw ApiException('Impossible de charger les bus', response.statusCode);
+  }
+
+  /// Récupère tous les trajets
+  static Future<List<dynamic>> getTrajets() async {
+    final url = Uri.parse('$kBackendBaseUrl/tragets/getAll');
+    final response = await http
+        .get(url, headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw ApiException('Impossible de charger les trajets', response.statusCode);
+  }
+
+  /// Récupère tous les feedbacks
+  static Future<List<dynamic>> getFeedbacks() async {
+    final url = Uri.parse('$kBackendBaseUrl/feedbacks/getAll');
+    final response = await http
+        .get(url, headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw ApiException('Impossible de charger les feedbacks', response.statusCode);
+  }
+
   // ─── FEEDBACKS ────────────────────────────────────────────────────────────
 
   /// Envoie un feedback vers la base de données

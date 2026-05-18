@@ -20,8 +20,8 @@ import 'dart:io' show Platform;
 // ============================================================
 
 /// IP de votre PC sur le réseau local (pour appareil physique)
-/// Modifiez cette valeur si vous testez sur un vrai téléphone !
-const String kHostIp = '192.168.1.100';
+/// ipconfig → IPv4 de votre réseau Wi-Fi
+const String kHostIp = '10.241.201.69';
 
 String get kBackendBaseUrl {
   if (kIsWeb) {
@@ -37,6 +37,22 @@ String get kBackendBaseUrl {
     }
   } catch (_) {}
   return 'http://localhost:8081/Bus-tracking';
+}
+
+/// URL WebSocket STOMP (endpoint natif Spring Boot, sans SockJS)
+/// ws://host:port/context-path/ws-native
+String get kWsBackendUrl {
+  if (kIsWeb) {
+    return 'ws://localhost:8081/Bus-tracking/ws-native';
+  }
+  try {
+    if (Platform.isAndroid) {
+      return 'ws://10.0.2.2:8081/Bus-tracking/ws-native';
+    } else if (Platform.isIOS) {
+      return 'ws://localhost:8081/Bus-tracking/ws-native';
+    }
+  } catch (_) {}
+  return 'ws://localhost:8081/Bus-tracking/ws-native';
 }
 
 // Colors

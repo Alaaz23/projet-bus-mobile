@@ -38,6 +38,7 @@ dependencies:
   flutter_map: ^6.1.0
   flutter_gradient_app_bar: ^0.3.1
   latlong2: ^0.9.1
+  stomp_dart_client: ^2.0.0
 
 
 

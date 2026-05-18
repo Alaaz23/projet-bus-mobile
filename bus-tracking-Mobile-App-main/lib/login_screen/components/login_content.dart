@@ -172,6 +172,7 @@ class _LoginContentState extends State<LoginContent> {
               matriculeController.text,
               passwordController.text,
             );
+            if (!mounted) return;
             if (!success) {
               // Login failed
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -224,6 +225,7 @@ class AuthService {
       print('[AUTH] Body: ${authResponse.body}');
 
       if (authResponse.statusCode != 200) {
+        if (!context.mounted) return false;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Erreur serveur. Veuillez réessayer plus tard.'),
           backgroundColor: Colors.red,
@@ -235,6 +237,7 @@ class AuthService {
       final bool success = authData['success'] ?? false;
 
       if (!success) {
+        if (!context.mounted) return false;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Matricule ou mot de passe incorrect.'),
           backgroundColor: Colors.red,
@@ -279,8 +282,7 @@ class AuthService {
 
         if (loginSuccess) {
           // Vérification mot de passe par défaut
-          bool isDefaultPassword = mdp == 'Sofrecom123#';
-          if (isDefaultPassword) {
+          bool isDefaultPassword = mdp == 'Sofrecom123#';          if (!context.mounted) return false;          if (isDefaultPassword) {
             _showPasswordResetDialog(context, matricule, data);
           } else {
             Navigator.of(context).pushReplacement(
@@ -300,6 +302,7 @@ class AuthService {
         }
       }
 
+      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Impossible de récupérer les données du salarié.'),
         backgroundColor: Colors.red,
